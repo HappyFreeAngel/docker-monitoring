@@ -51,43 +51,6 @@ object StreamingJob {
   def main(args: Array[String]) {
 
     playJsonTest()
-    //    放这里没有用.
-//    implicit val memoryReads: Reads[Memory] = (
-//      (JsPath \ "raw").read[String] and
-//        (JsPath \ "percent").read[String].map(x=>x.replace("%","").trim.toFloat/100.0f)
-//      ) (Memory.apply _)
-//
-//    implicit val memoryWrites = new Writes[Memory] {
-//      def writes(memory: Memory) = Json.obj(
-//        "raw" -> memory.raw,
-//        "percent" -> memory.percent
-//      )
-//    }
-//
-//    implicit val dockerContainerStatusReads: Reads[DockerContainerStatus] = (
-//      (JsPath \ "time").read[Date] and
-//        (JsPath \ "ID").read[String] and
-//        (JsPath \ "name").read[String] and
-//        (JsPath \ "cpu").read[String].map(x=>x.replace("%","").trim.toFloat/100.0f) and
-//        (JsPath \ "memory").read[Memory] and
-//        (JsPath \ "netIO").read[String] and
-//        (JsPath \ "blockIO").read[String] and
-//        (JsPath \ "PIDs").read[String]) (DockerContainerStatus.apply _)
-//
-//
-//    implicit val dockerContainerStatusWrites = new Writes[DockerContainerStatus] {
-//      def writes(d: DockerContainerStatus) = Json.obj(
-//        "time" -> d.time,
-//        "ID" -> d.ID,
-//        "name" -> d.name,
-//        "cpu".replaceAll("%", "").trim -> d.cpu,
-//        "memory" -> d.memory,
-//        "netIO" -> d.netIO,
-//        "blockIO" -> d.blockIO,
-//        "PIDs" -> d.PIDs
-//      )
-//    }
-    // set up the streaming execution environment
     val env = StreamExecutionEnvironment.getExecutionEnvironment
 
     // use event time for the application
@@ -108,21 +71,7 @@ object StreamingJob {
 
     val sourceStream = new FlinkKafkaConsumer[String](kafkaQueueTopic, new SimpleStringSchema(), properties)
       .setStartFromTimestamp(1)
-    //这个必须定义,否则返回警告: no implicits found for parameter formats: Formats, Manifest
-    //implicit val formats = DefaultFormats
-
-    //    val dataStream = env.addSource[String](sourceStream).filter(s => {
-    //      !s.contains("CONTAINER")
-    //    })
-
     val dataStream = env.addSource[String](sourceStream)
-//
-//    //必须用lazy 否则会报错. 这个注释的代码没有用.
-//    lazy implicit val memoryFormat = Json.format[Memory]
-//    lazy implicit val dockerContainerStatusFormat = Json.format[DockerContainerStatus]
-
-
-
     val dockerContainerStatusStream = dataStream.map(new MapFunction[String, DockerContainerStatus]() {
 
       @throws[Exception]
@@ -172,20 +121,13 @@ object StreamingJob {
 
         try {
           val jsonObject = Json.parse(jsonString)
-          //print("标准格式的JSON="+jsonObject.toString()+"\n")
-          //val json2=Json.parse(json.toString())
-          //val result=jsonObject.validate[DockerContainerStatus]
-          //print("结果="+result.get+"\n")
-          //print("\n"+jsonString)
           dockerContainerStatus = jsonObject.as[DockerContainerStatus]
         } catch {
           case ex: Exception => print("转换异常:"+ex+"  \njsonString=" + jsonString)
         }
         finally {
-          // your scala code here, such as to close a database connection
           //print("最后....")
         }
-
         dockerContainerStatus
       }
     }
