@@ -1,0 +1,34 @@
+filebeat:
+    inputs:
+        - type: log
+          enabled: true
+          tags:
+              - execer
+          paths:
+              - /usr/share/filebeat/data/*.log
+#- type: log
+#  enabled: true
+#  tags:
+#    - netflower
+#  paths:
+#    - /usr/share/services/netflower/logs/netflower.log
+
+processors:
+- add_locale: ~
+
+output.kafka:
+  # specifying filebeat to take timestamp and message fields, other wise it
+  # take the lines as json and publish to kafka
+  codec.format:  #注意这个timestamp 可能没有任何意义，这个不是事件的发生事件，只是代表filebeat读日志的时间.
+    #string: '{"time": "%{[@timestamp]}" %{[message]}'
+    string: '%{[message]}'
+  # kafka
+  # 10.252.94.61 is my local machine ip address
+  # publishing to 'log' topic
+  hosts: ["10.5.0.2:9092"]
+  topic: 'log'
+  partition.round_robin:
+    reachable_only: false
+  required_acks: 1
+  compression: gzip
+  max_message_bytes: 1000000

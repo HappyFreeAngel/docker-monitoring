@@ -1,0 +1,11 @@
+/target/
+*.iml
+*.tar.gz
+*.tgz
+*.class
+*.jar
+*.log
+/.idea/
+/.idea/*.xml
+/docker-monitoring/.idea/
+/docker-monitoring/.idea/*.xml
